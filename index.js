@@ -60,10 +60,29 @@ app.get('/info', (request, response) => {
 })
 
 app.post('/api/persons', (request, response) => {
-    const randInt = Math.floor(Math.random() * 1000000)
-    const person = {id: randInt, ...request.body}
-    persons = persons.concat(person)
-    response.json(persons)
+    const body = request.body
+
+    if (!body.name) {
+        response.status(400).json(
+            {error: "name missing"}
+        )
+    }
+    else if (!body.number) {
+        response.status(400).json(
+            {error: "number missing"}
+        )
+    }
+    else if (persons.map(p => p.name).includes(body.name)) {
+        response.status(400).json(
+            {error: "name already exists"}
+        )
+    }
+    else {
+        const randInt = Math.floor(Math.random() * 1000000)
+        const person = {id: randInt, ...request.body}
+        persons = persons.concat(person)
+        response.json(persons)
+    }
 })
 
 const PORT = 3001
