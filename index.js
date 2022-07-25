@@ -1,3 +1,4 @@
+const { response } = require('express')
 const express = require('express')
 
 let persons = [
@@ -27,6 +28,18 @@ const app = express()
 
 app.get('/api/persons', (request, response) => {
     response.json(persons)
+})
+
+app.get('/api/persons/:id', (request, response) => {
+    const id = request.params.id
+    const maxId = Math.max(...persons.map( p => p.id))
+    if (id > maxId || id <= 0) {
+        response.status(404).end()
+    }
+    else {
+        response.json(persons[(id - 1)])
+    }
+
 })
 
 app.get('/info', (request, response) => {
