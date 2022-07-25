@@ -26,6 +26,8 @@ let persons = [
 
 const app = express()
 
+app.use(express.json())
+
 app.get('/api/persons', (request, response) => {
     response.json(persons)
 })
@@ -49,12 +51,19 @@ app.delete('/api/persons/:id', (request, response) => {
 })
 
 app.get('/info', (request, response) => {
-    const numberOfPeople = Math.max(...persons.map( p => p.id))
+    const numberOfPeople = persons.length
     const timeReceived = Date()
     response.send(
         "<p>Phonebook has info for "+numberOfPeople+" people<p/>" +
         "<p>"+timeReceived+"<p/>"
     )
+})
+
+app.post('/api/persons', (request, response) => {
+    const randInt = Math.floor(Math.random() * 1000000)
+    const person = {id: randInt, ...request.body}
+    persons = persons.concat(person)
+    response.json(persons)
 })
 
 const PORT = 3001
