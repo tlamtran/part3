@@ -25,9 +25,23 @@ let persons = [
     }
 ]
 
+const postBody = morgan.token('type', (req, res) => {
+    req.body
+})
+
 const app = express()
 
-app.use(morgan('tiny'))
+app.use(morgan(function (tokens, req, res) {
+    return [
+      tokens.method(req, res),
+      tokens.url(req, res),
+      tokens.status(req, res),
+      tokens.res(req, res, 'content-length'), '-',
+      tokens['response-time'](req, res), 'ms',
+      JSON.stringify(req.body)
+    ].join(' ')
+  }))
+
 app.use(express.json())
 
 app.get('/api/persons', (request, response) => {
