@@ -32,6 +32,7 @@ const postBody = morgan.token('type', (req, res) => {
 
 const app = express()
 
+app.use(express.static('build'))
 app.use(morgan(function (tokens, req, res) {
     return [
       tokens.method(req, res),
