@@ -25,6 +25,7 @@ if (process.argv.length === 3) {
         })
         .then( () => {
             Person.find({}).then( result => {
+                console.log('Phonebook:')
                 result.forEach( p => {
                     console.log(`${p.name} ${p.number}`)
                 })
