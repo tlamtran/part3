@@ -5,10 +5,7 @@ const cors = require('cors')
 const Person = require('./models/person')
 const app = express()
 
-
-// middleware
-app.use(express.static('build'))
-app.use(morgan(function (tokens, req, res) {
+const requestLogger = morgan(function (tokens, req, res) {
     return [
       tokens.method(req, res),
       tokens.url(req, res),
@@ -17,8 +14,25 @@ app.use(morgan(function (tokens, req, res) {
       tokens['response-time'](req, res), 'ms',
       JSON.stringify(req.body)
     ].join(' ')
-  }))
+  })
+
+const unknownEndpoint = (request, response) => {
+    response.status(404).send({error: 'unknown endpoint'})
+}
+
+const errorHandler = (error, request, response, next) => {
+    console.log(error.message)
+
+    if (error.name === 'CastError') {
+        response.status(400).send({error: 'Malformatted id'})
+    }
+
+    next(error)
+}
+
+app.use(express.static('build'))
 app.use(express.json())
+app.use(requestLogger)
 app.use(cors())
 
 
@@ -28,34 +42,48 @@ app.get('/api/persons', (request, response) => {
     })
 })
 
-app.get('/api/persons/:id', (request, response) => {
-    Person.findById(request.params.id).then( person => {
-        response.json(person)
-    })
+app.get('/api/persons/:id', (request, response, next) => {
+    Person.findById(request.params.id)
+        .then( person => {
+            if (person) {
+                response.json(person)
+            }
+            else {
+                response.status(404).end()
+            }
+        })
+        .catch(err => next(err))
 })
 
 app.get('/info', (request, response) => {
-    const numberOfPeople = persons.length
-    const timeReceived = Date()
-    response.send(
-        "<p>Phonebook has info for "+numberOfPeople+" people<p/>" +
-        "<p>"+timeReceived+"<p/>"
-    )
+    Person.count({}).then( count => {
+        response.send(
+            "<p>Phonebook has info for "+count+" people<p/>" +
+            "<p>"+Date()+"<p/>"
+        )
+    })
 })
 
-app.delete('/api/persons/:id', (request, response) => {
-    const id = Number(request.params.id)
-    if (persons.map(p => p.id).includes(id)) {
-        persons = persons.filter(p => p.id !== id)
-        response.status(204).end()
-    }
-    else {
-        response.status(404).end()
-    }
+app.delete('/api/persons/:id', (request, response, next) => {
+    Person.findByIdAndDelete(request.params.id)
+        .then( result => {
+            if (result) {
+                response.status(204).end()
+            }
+            else {
+                response.status(404).end()
+            }
+        })
+        .catch( err => next(err))
 })
 
 app.post('/api/persons', (request, response) => {
     const body = request.body
+
+    if (body.name === undefined || body.number === undefined) {
+        response.status(400).json({ err: 'content missing'})
+    }
+
     const person = new Person({
         name: body.name,
         number: body.number
@@ -64,6 +92,24 @@ app.post('/api/persons', (request, response) => {
         response.json(savedPerson)
     })
 })
+
+app.put('/api/persons/:id', (request, response, next) => {
+    const body = request.body
+
+    const person = {
+        name: body.name,
+        number: body.number
+    }
+
+    Person.findByIdAndUpdate(request.params.id, person, {new: true})
+        .then( updatedPerson => {
+            response.json(updatedPerson)
+        })
+        .catch( err => next(err))
+})
+
+app.use(unknownEndpoint)
+app.use(errorHandler)
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
