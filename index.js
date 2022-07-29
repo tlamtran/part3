@@ -83,14 +83,15 @@ app.post('/api/persons', (request, response) => {
     if (body.name === undefined || body.number === undefined) {
         response.status(400).json({ err: 'content missing'})
     }
-
-    const person = new Person({
-        name: body.name,
-        number: body.number
-    })
-    person.save().then( savedPerson => {
-        response.json(savedPerson)
-    })
+    else {
+        const person = new Person({
+            name: body.name,
+            number: body.number
+        })
+        person.save().then( savedPerson => {
+            response.json(savedPerson)
+        })
+    }
 })
 
 app.put('/api/persons/:id', (request, response, next) => {
