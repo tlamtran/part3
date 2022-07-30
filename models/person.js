@@ -10,7 +10,7 @@ mongoose.connect(url)
     })
     .catch( err => {
         console.log('error connecting to MongoDB', err.message)
-        })
+    })
 
 
 const numberValidator = (number) => {
