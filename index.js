@@ -26,6 +26,9 @@ const errorHandler = (error, request, response, next) => {
     if (error.name === 'CastError') {
         response.status(400).send({error: 'Malformatted id'})
     }
+    else if (error.name === 'ValidationError') {
+        response.status(400).json({error: error.message})
+    }
 
     next(error)
 }
@@ -37,9 +40,10 @@ app.use(cors())
 
 
 app.get('/api/persons', (request, response) => {
-    Person.find({}).then( data => {
-        response.json(data)
-    })
+    Person.find({})
+        .then( data => {
+            response.json(data)
+        })
 })
 
 app.get('/api/persons/:id', (request, response, next) => {
@@ -56,12 +60,14 @@ app.get('/api/persons/:id', (request, response, next) => {
 })
 
 app.get('/info', (request, response) => {
-    Person.count({}).then( count => {
-        response.send(
-            "<p>Phonebook has info for "+count+" people<p/>" +
-            "<p>"+Date()+"<p/>"
-        )
-    })
+    Person.count({})
+        .then( count => {
+            response.send(
+                "<p>Phonebook has info for "+count+" people<p/>" +
+                "<p>"+Date()+"<p/>"
+            )
+        })
+        .catch(err => next(err))
 })
 
 app.delete('/api/persons/:id', (request, response, next) => {
@@ -77,32 +83,29 @@ app.delete('/api/persons/:id', (request, response, next) => {
         .catch( err => next(err))
 })
 
-app.post('/api/persons', (request, response) => {
+app.post('/api/persons', (request, response, next) => {
     const body = request.body
 
-    if (body.name === "" || body.number === "") {
-        response.status(400).json({ err: 'content missing'})
-    }
-    else {
-        const person = new Person({
-            name: body.name,
-            number: body.number
-        })
-        person.save().then( savedPerson => {
+    const person = new Person({
+        name: body.name,
+        number: body.number
+    })
+    person.save()
+        .then( savedPerson => {
             response.json(savedPerson)
         })
-    }
+        .catch(err => next(err))
 })
 
 app.put('/api/persons/:id', (request, response, next) => {
-    const body = request.body
+    const {name, number} = request.body
 
     const person = {
-        name: body.name,
-        number: body.number
+        name: name,
+        number: number
     }
 
-    Person.findByIdAndUpdate(request.params.id, person, {new: true})
+    Person.findByIdAndUpdate(request.params.id, person, {new: true, runValidators: true})
         .then( updatedPerson => {
             response.json(updatedPerson)
         })

@@ -12,9 +12,33 @@ mongoose.connect(url)
         console.log('error connecting to MongoDB', err.message)
         })
 
+
+const numberValidator = (number) => {
+    const parts = number.split('-')
+
+    if (parts.every( p => !isNaN(Number(p)))) {
+        if (parts.length === 2) {
+            return parts[0].length >= 2 && parts[0].length <= 3 && number.length - 1 >= 8
+        }
+        else if (parts.length === 1) {
+            return number.length >= 8
+        }
+        else return false
+    }
+    else return false
+}
 const personSchema = new mongoose.Schema({
-    name: String,
-    number: String
+    name: {
+        type: String,
+        minLength: 3,
+        required: true
+    },
+    number: {
+        type: String,
+        minLength: 8,
+        validate: [numberValidator, 'min length 8, if separated with one "-" first part length 2-3'],
+        required: true
+    }
 })
 
 personSchema.set('toJSON', {
